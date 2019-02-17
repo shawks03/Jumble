@@ -3,6 +3,7 @@ A jumble puzzle solver using Spark.
 
 The algorithm follows #2 found here:
 * https://en.wikipedia.org/wiki/Jumble_algorithm
+
 where permutations are made from the jumbled words.
 
 It would be interesting to implement algorithm #1 and do a comparison.
