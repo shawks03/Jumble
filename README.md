@@ -21,6 +21,8 @@ Next, the program can be run in one of two ways.
 Locally with a single argument for the puzzle name (see source/puzzles):
 * ./localSolver.sh puzzle[1|2|3|4].json
 
+Can see the UI at http://localhost:4040
+
 On a Spark cluster, again same argument:
 * ./clusterSolver.sh puzzle[1|2|3|4].json
 
