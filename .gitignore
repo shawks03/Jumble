@@ -1,0 +1,4 @@
+source/app-*
+source/project
+source/target
+source/puzzles/puzzle*.json.result

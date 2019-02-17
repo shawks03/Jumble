@@ -26,7 +26,17 @@ On a Spark cluster, again same argument:
 
 Can see the cluster at http://localhost:8080
 
-When done, shutdown the cluster with:
+When program is done, shutdown the cluster with (needed even when doing multiple runs):
 * docker-compose down
 
 Results for both local and cluster mode can be found in source/puzzles/puzzle[1|2|3|4].json.result once finished.
+
+# Adjustments
+To adjust the number of cores, memory, or slaves for local mode, modify:
+* localSolver.sh
+
+To adjust the number of cores or memory for cluster mode modify:
+* docker-compose.yml
+
+To adjust the number of slaves adjust the scale for the slave service in:
+* clusterSolver.sh
