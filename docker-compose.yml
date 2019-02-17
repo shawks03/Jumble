@@ -1,0 +1,37 @@
+version: "3"
+services:
+  master:
+    image: shawks03/spark
+    entrypoint: start-master.sh
+    ports:
+     - 8080:8080
+    volumes:
+     - ./source:/source
+    networks:
+     - sparknet
+  slave:
+    depends_on:
+      - master
+    image: shawks03/spark
+    entrypoint: start-slave.sh
+    command: ["--cores", "2", "--memory", "4G", "--work-dir", "/source", "spark://master:7077"]
+    volumes:
+     - ./source:/source
+    networks:
+     - sparknet
+  solver:
+    depends_on:
+      - slave
+    image: shawks03/spark
+    environment:
+      - PUZZLE=/source/puzzles/${PUZZLE}
+    entrypoint: spark-submit
+    command: ["--class", "Solver", "--master", "spark://master:7077", "/source/target/scala-2.11/solver_2.11-1.0.jar"]
+    volumes:
+     - ./source:/source
+    networks:
+     - sparknet
+
+networks:
+  sparknet:
+    driver: "bridge"
