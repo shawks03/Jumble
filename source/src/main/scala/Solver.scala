@@ -13,9 +13,9 @@ import org.apache.spark.sql.functions._
 import java.io._
 import java.lang.Long
 
-case class Phrase(freq: Int, phrase: Array[String])
 case class PWordRow(id: Long, word: String)
-case class PhraseRow(id: Long, freq: Long, phrase: Array[String])
+case class Phrase(freq: Int, phrase: String)
+case class PhraseRow(id: Long, freq: Long, phrase: String)
 
 object MyFunctions {
   def getPerms(
@@ -59,12 +59,29 @@ object MyFunctions {
     return builder.toString()
   }
 
-  def getPhrases(
+  def getPhrase(
+    pword: String,
+    pLengths: Array[Long]
+  ): Array[String] = {
+    var phrase: Array[String] = Array.fill[String](pLengths.length)("")
+
+    // split pword into phrase
+    var beg = 0
+    for (p <- 0 to pLengths.length.toInt - 1) {
+      var len = pLengths(p).toInt
+      var word = pword.substring(beg, beg + len)
+      phrase(p) = word
+      beg += len
+    }
+
+    return phrase
+  }
+
+  def getPhrase(
     pword: String,
     pLengths: Array[Long],
     dict: Broadcast[Map[String, Integer]]
   ): Option[Phrase] = {
-    var phrase: Array[String] = Array.fill[String](pLengths.length)("")
     var phraseFreq = 0 // lower number better
 
     // split pword into phrase
@@ -74,7 +91,6 @@ object MyFunctions {
       var word = pword.substring(beg, beg + len)
       val freq = dict.value.get(word).getOrElse(new Integer(0))
       if (freq > 0) {
-        phrase(p) = word
         phraseFreq += freq
       } else {
         // Abort early
@@ -84,11 +100,11 @@ object MyFunctions {
       beg += len
     }
 
-    val result: Option[Phrase] = Some(Phrase(phraseFreq, phrase))
+    val result: Option[Phrase] = Some(Phrase(phraseFreq, pword))
     return result
   }
 
-  def getPhrasesWrapper(
+  def getPhrases(
     pwPerms: Dataset[PWordRow],
     pLengths: Array[Long],
     dict: Broadcast[Map[String, Integer]]
@@ -97,7 +113,7 @@ object MyFunctions {
     import spark.implicits._
 
     return pwPerms.flatMap(row => {
-      val phrase: Option[Phrase] = MyFunctions.getPhrases(row.word, pLengths, dict)
+      val phrase: Option[Phrase] = MyFunctions.getPhrase(row.word, pLengths, dict)
       if (phrase.isEmpty)
         Seq()
       else
@@ -166,13 +182,15 @@ class Puzzle(dictFile: String) {
     ) //    ).distinct()
 
     // Calculate possible phrases
-    val phrases: Dataset[PhraseRow] = MyFunctions.getPhrasesWrapper(pwords, pLengths, dict)
+    val phrases: Dataset[PhraseRow] = MyFunctions.getPhrases(pwords, pLengths, dict)
  
     // Reduce the phrases, keeping the lowest freq. Only need one.
     val winner = phrases.reduce((a, b) => if (a.freq < b.freq) a else b)
 
     val pw = new PrintWriter(new File(puzzleFile + ".result"))
-    pw.write(s"Phrase: " + winner.phrase.mkString(" ") + s"\n")
+
+    val phrase = MyFunctions.getPhrase(winner.phrase, pLengths)
+    pw.write(s"Phrase: " + phrase.mkString(" ") + s"\n")
     pw.write(s"Words: ")
 
     val words = MyFunctions.getWordsById(wordCombinations, winner.id)
